@@ -1,7 +1,7 @@
 {
     "test_folder_base_name": "Final_seed_test_expert_scr_init_with_hyper_sum_with_gpu",
-    "dataset": "Human_DLPFC",
-    "n_pcs": 15,
+    "dataset": "others",
+    "n_pcs": 30,
     "scribble": 1,
     "expert_scribble": 1,
     "nChannel": 100,
@@ -17,5 +17,5 @@
     "miu_options": [10],
     "niu_options": [1],
     "lr_options": [0.1],
-    "samples": ["151507", "151669", "151673"]
+    "samples": ["hbcb_A_1"]
 }

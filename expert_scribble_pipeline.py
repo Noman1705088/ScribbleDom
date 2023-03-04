@@ -20,6 +20,7 @@ import math
 from scipy import spatial
 import json
 import random
+from inception import Inception_block
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -195,28 +196,32 @@ for model in tqdm(models):
     class MyNet(nn.Module):
         def __init__(self,input_dim):
             super(MyNet, self).__init__()
-            self.conv1 = nn.Conv2d(input_dim, intermediate_channels, kernel_size=3, stride=1, padding=1 )
+            self.conv1 = nn.Conv2d(input_dim, intermediate_channels, kernel_size=1, stride=1, padding=0 )
             self.bn1 = nn.BatchNorm2d(intermediate_channels)
             self.conv2 = nn.ModuleList()
             self.bn2 = nn.ModuleList()
-            for i in range(nConv-1):
-                self.conv2.append( nn.Conv2d(intermediate_channels, intermediate_channels, kernel_size=3, stride=1, padding=1 ) )
-                self.bn2.append( nn.BatchNorm2d(intermediate_channels) )
+            # for i in range(nConv-1):
+            #     # self.conv2.append( nn.Conv2d(intermediate_channels, intermediate_channels, kernel_size=3, stride=1, padding=1 ) )
+            #     # self.bn2.append( nn.BatchNorm2d(intermediate_channels) )
+            # In this order: in_channels, out_1x1, red_3x3, out_3x3, red_5x5, out_5x5, out_1x1pool
+            self.inception3a = Inception_block(intermediate_channels, 64, 96, 128, 16, 32, 32)
 
             r = last_layer_channel_count
 
             print('last layer size:', r)
-            self.conv3 = nn.Conv2d(intermediate_channels, r, kernel_size=1, stride=1, padding=0 )
+            # self.conv3 = nn.Conv2d(intermediate_channels, r, kernel_size=1, stride=1, padding=0 )
+            self.conv3 = nn.Conv2d(256, r, kernel_size=1, stride=1, padding=0 )
             self.bn3 = nn.BatchNorm2d(r)
 
         def forward(self, x):
             x = self.conv1(x)
             x = F.relu( x )
             x = self.bn1(x)
-            for i in range(nConv-1):
-                x = self.conv2[i](x)
-                x = F.relu( x )
-                x = self.bn2[i](x)
+            # for i in range(nConv-1):
+            #     x = self.conv2[i](x)
+            #     x = F.relu( x )
+            #     x = self.bn2[i](x)
+            x = self.inception3a(x)
             x = self.conv3(x)
             x = self.bn3(x)
             return x
