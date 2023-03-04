@@ -45,7 +45,10 @@ for sample in samples:
     # n_pcs = 15
     h5_file = f'{sample}_filtered_feature_bc_matrix.h5'
     # h5_file = f'adata.h5'
-    adata = scanpy.read_visium(path = h5_path, count_file = h5_file)
+    if dataset != 'Human_DLPFC':
+        adata = scanpy.read(h5_path+h5_file)
+    else :
+        adata = scanpy.read_visium(path=h5_path,count_file=h5_file)
     adata.var_names_make_unique()
     
 
