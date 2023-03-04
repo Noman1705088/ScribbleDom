@@ -14,8 +14,19 @@ import argparse
 parser = argparse.ArgumentParser(description='ScribbleSeg Preprocessor')
 parser.add_argument('--scheme', help="'expert' for expert scribbles, 'mclst' for mclust label initialization", required=True)
 
+# args = parser.parse_args()
+
+# parser = argparse.ArgumentParser(description='ScribbleSeg expert annotation pipeline')
+parser.add_argument('--params', help="The input parameters json file path", required=True)
+
 args = parser.parse_args()
 
+with open(args.params) as f:
+   params = json.load(f)
+
+dataset = params['dataset']
+n_pcs = params['n_pcs']
+samples = params['samples']
 
 # %%
 
@@ -27,12 +38,13 @@ args = parser.parse_args()
 # adata = scanpy.read_h5ad(f'{h5_path}/{h5_file}')
 # adata
 
-dataset = 'Human_DLPFC'
-samples = ['151507', '151508', '151509', '151510', '151669', '151670', '151671', '151672', '151673', '151674', '151675', '151676']
+# dataset = 'Human_DLPFC'
+# samples = ['151507', '151508', '151509', '151510', '151669', '151670', '151671', '151672', '151673', '151674', '151675', '151676']
 for sample in samples:
     h5_path = f'./Data/{dataset}/{sample}/reading_h5/'
-    n_pcs = 15
+    # n_pcs = 15
     h5_file = f'{sample}_filtered_feature_bc_matrix.h5'
+    # h5_file = f'adata.h5'
     adata = scanpy.read_visium(path = h5_path, count_file = h5_file)
     adata.var_names_make_unique()
     
