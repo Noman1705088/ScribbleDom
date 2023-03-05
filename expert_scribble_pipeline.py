@@ -201,16 +201,27 @@ for model in tqdm(models):
             self.conv2 = nn.ModuleList()
             self.bn2 = nn.ModuleList()
             # for i in range(nConv-1):
-            #     # self.conv2.append( nn.Conv2d(intermediate_channels, intermediate_channels, kernel_size=3, stride=1, padding=1 ) )
-            #     # self.bn2.append( nn.BatchNorm2d(intermediate_channels) )
+            #     self.conv2.append( nn.Conv2d(intermediate_channels, intermediate_channels, kernel_size=1, stride=1, padding=0 ) )
+            #     self.bn2.append( nn.BatchNorm2d(intermediate_channels) )
             # In this order: in_channels, out_1x1, red_3x3, out_3x3, red_5x5, out_5x5, out_1x1pool
             self.inception3a = Inception_block(intermediate_channels, 64, 96, 128, 16, 32, 32)
+            self.bn_i_1 = nn.BatchNorm2d(256)
+
+            self.inception3b = nn.ModuleList()
+            self.bn_i_2 = nn.ModuleList()
+
+            self.inception3b.append(Inception_block(256, 64, 96, 16, 16, 16, 32))
+            self.bn_i_2.append(nn.BatchNorm2d(128))
+
+            for i in range(nConv-1):
+                self.inception3b.append(Inception_block(128, 64, 96, 16, 16, 16, 32))
+                self.bn_i_2.append(nn.BatchNorm2d(128))
 
             r = last_layer_channel_count
 
             print('last layer size:', r)
             # self.conv3 = nn.Conv2d(intermediate_channels, r, kernel_size=1, stride=1, padding=0 )
-            self.conv3 = nn.Conv2d(256, r, kernel_size=1, stride=1, padding=0 )
+            self.conv3 = nn.Conv2d(128, r, kernel_size=1, stride=1, padding=0 )
             self.bn3 = nn.BatchNorm2d(r)
 
         def forward(self, x):
@@ -222,6 +233,14 @@ for model in tqdm(models):
             #     x = F.relu( x )
             #     x = self.bn2[i](x)
             x = self.inception3a(x)
+            x = F.relu( x )
+            x = self.bn_i_1(x)
+
+            for i in range(nConv):
+                x = self.inception3b[i](x)
+                x = F.relu( x )
+                x = self.bn_i_2[i](x)
+
             x = self.conv3(x)
             x = self.bn3(x)
             return x
