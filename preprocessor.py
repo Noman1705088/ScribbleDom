@@ -27,6 +27,7 @@ with open(args.params) as f:
 dataset = params['dataset']
 n_pcs = params['n_pcs']
 samples = params['samples']
+is_simulation = params['simulation']
 
 # %%
 
@@ -300,6 +301,17 @@ for sample in samples:
     # df_barcode_scr['cluster.init'].values
 
     # %%
+
+    if is_simulation:
+        middle_hight = int(grid_pc.shape[0]/2)
+        grid_pc = np.full_like(grid_pc,5)
+        grid_pc[middle_hight] = np.full_like(grid_pc[middle_hight],125)
+
+        middle_hight = int(grid_scr.shape[0]/2)
+        grid_scr = np.full_like(grid_scr,255)
+        grid_scr[middle_hight] = np.zeros_like(grid_scr[middle_hight])
+        grid_scr[middle_hight+18] = np.ones_like(grid_scr[middle_hight+18])
+
     np.save(scr_file_path, grid_scr)
     np.save(mapped_pc_file_path, grid_pc)
 

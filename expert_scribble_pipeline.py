@@ -18,6 +18,7 @@ from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.metrics.pairwise import euclidean_distances
 import math
 from scipy import spatial
+from scipy import stats
 import json
 import random
 from inception import Inception_block
@@ -54,6 +55,8 @@ sim_options = params['sim_options']
 miu_options = params['miu_options']
 niu_options = params['niu_options']
 lr_options = params['lr_options']
+
+refine = params['refinement_steps']
 
 use_cuda = torch.cuda.is_available()
 
@@ -98,8 +101,9 @@ for sample in samples:
                         )
 
 # %%
-
+report_list = []
 for model in tqdm(models):
+    report_map = {}
     seed = model['seed']
     lr = model['lr']
     stepsize_sim = model['stepsize_sim']
@@ -115,6 +119,13 @@ for model in tqdm(models):
     print(f'sim: {stepsize_sim}')
     print(f'miu: {stepsize_con}')
     print(f'niu: {stepsize_scr}')
+
+    report_map['sample'] = sample
+    report_map['seed'] = seed
+    report_map['sim'] = stepsize_sim
+    report_map['miu'] = stepsize_con
+    report_map['niu'] = stepsize_scr
+    report_map['refinement_steps'] = refine
 
     npz_path = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Npzs'
     npy_path = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Npys'
@@ -198,40 +209,35 @@ for model in tqdm(models):
             super(MyNet, self).__init__()
             self.conv1 = nn.Conv2d(input_dim, intermediate_channels, kernel_size=1, stride=1, padding=0 )
             self.bn1 = nn.BatchNorm2d(intermediate_channels)
-            self.conv2 = nn.ModuleList()
-            self.bn2 = nn.ModuleList()
-            # for i in range(nConv-1):
-            #     self.conv2.append( nn.Conv2d(intermediate_channels, intermediate_channels, kernel_size=1, stride=1, padding=0 ) )
-            #     self.bn2.append( nn.BatchNorm2d(intermediate_channels) )
-            # In this order: in_channels, out_1x1, red_3x3, out_3x3, red_5x5, out_5x5, out_1x1pool
-            self.inception3a = Inception_block(intermediate_channels, 64, 96, 128, 16, 32, 32)
+
+            self.inception3a = Inception_block(intermediate_channels, 160, 96, 64, 16, 16, 16)
             self.bn_i_1 = nn.BatchNorm2d(256)
 
             self.inception3b = nn.ModuleList()
             self.bn_i_2 = nn.ModuleList()
 
-            self.inception3b.append(Inception_block(256, 64, 96, 16, 16, 16, 32))
-            self.bn_i_2.append(nn.BatchNorm2d(128))
-
-            for i in range(nConv-1):
-                self.inception3b.append(Inception_block(128, 64, 96, 16, 16, 16, 32))
+            if nConv >= 1:
+                self.inception3b.append(Inception_block(256, 96, 32, 16, 16, 8, 8))
                 self.bn_i_2.append(nn.BatchNorm2d(128))
+
+                for i in range(nConv-1):
+                    self.inception3b.append(Inception_block(128, 96, 32, 16, 16, 8, 8))
+                    self.bn_i_2.append(nn.BatchNorm2d(128))
 
             r = last_layer_channel_count
 
             print('last layer size:', r)
-            # self.conv3 = nn.Conv2d(intermediate_channels, r, kernel_size=1, stride=1, padding=0 )
-            self.conv3 = nn.Conv2d(128, r, kernel_size=1, stride=1, padding=0 )
+            if nConv>=1:
+                self.conv3 = nn.Conv2d(128, r, kernel_size=1, stride=1, padding=0 )
+            else:
+                self.conv3 = nn.Conv2d(256, r, kernel_size=1, stride=1, padding=0 )
             self.bn3 = nn.BatchNorm2d(r)
 
         def forward(self, x):
             x = self.conv1(x)
             x = F.relu( x )
             x = self.bn1(x)
-            # for i in range(nConv-1):
-            #     x = self.conv2[i](x)
-            #     x = F.relu( x )
-            #     x = self.bn2[i](x)
+            
             x = self.inception3a(x)
             x = F.relu( x )
             x = self.bn_i_1(x)
@@ -497,6 +503,33 @@ for model in tqdm(models):
     im_target_rgb = np.array([label_colours[ (c + 10) % nChannel ] for c in im_target])
     im_target_rgb = im_target_rgb.reshape( np.array([im.shape[0],im.shape[1],3]).astype( np.uint8 ))
     im_cluster_num = im_target.reshape(im.shape[0], im.shape[1])
+
+    # refine the cluster label, so that the cluster label is the same as the majority label of the pixels in the neighborhood
+    def refine_cluster_label(im_cluster_num, im, radius = 1):
+        im_cluster_num_refined = im_cluster_num.copy()
+        for i in range(im.shape[0]):
+            for j in range(im.shape[1]):
+                if im_cluster_num[i, j] == 110: continue
+                else:
+                    cluster_label = im_cluster_num[i, j]
+                    cluster_label_count = 0
+                    other_cluster_labels = []
+                    for k in range(-radius, radius + 1):
+                        for l in range(-radius, radius + 1):
+                            if i + k < 0 or i + k >= im.shape[0] or j + l < 0 or j + l >= im.shape[1]: continue
+                            if im_cluster_num[i + k, j + l] == 110: continue
+                            if im_cluster_num[i + k, j + l] == cluster_label: cluster_label_count += 1
+                            else : other_cluster_labels.append(im_cluster_num[i + k, j + l])
+                    if cluster_label_count < 5:
+                        max_item,count = stats.mode(np.array(other_cluster_labels))
+                        if len(count) != 0 and count[0] > 5:
+                            im_cluster_num_refined[i, j] = max_item[0]
+        return im_cluster_num_refined
+    im_cluster_num_refined = im_cluster_num.copy()
+    for i in range(refine):
+        im_cluster_num_refined = refine_cluster_label(im_cluster_num_refined, im, radius = 1)
+    im_cluster_num = im_cluster_num_refined
+
     f = im_cluster_num
     s = np.argwhere(f != 110) # not a good way
     colors = f.flatten()
@@ -512,6 +545,10 @@ for model in tqdm(models):
     im_target_rgb = np.array([label_colours[ c % nChannel ] for c in im_target])
     im_target_rgb = im_target_rgb.reshape( np.array([im.shape[0],im.shape[1],3]).astype( np.uint8 ))
     im_cluster_num = im_target.reshape(im.shape[0], im.shape[1])
+
+    ## refinement
+    im_cluster_num = im_cluster_num_refined
+
     labels = im_cluster_num[pixel_rows_cols[:, 0], pixel_rows_cols[:, 1]]
     grid_spots, colors = get_grid_spots_from_pixels(pixel_rows_cols, labels)
 
@@ -538,17 +575,34 @@ for model in tqdm(models):
     print(f"Total loss: {loss}")
     print(f"Loss without hyperparam: {loss_without_hyperparam}")
 
+
+    report_map['ari'] = calc_ari(df_man, df_labels)
+    report_map['loss_sim'] = L_sim.data.cpu().numpy()
+    report_map['loss_con'] = L_con.data.cpu().numpy()
+    report_map['loss_scr'] = L_scr.data.cpu().numpy()
+    report_map['loss_total'] = loss.data.cpu().numpy()
+
     meta_data_value = [test_name, seed, dataset, sample, n_pcs, scribble, max_iter, stepsize_sim, stepsize_con, stepsize_scr, scheme, lr, nConv, no_of_scribble_layers, intermediate_channels, added_layers, last_layer_channel_count, hyper_sum_division]
     df_meta_data = pd.DataFrame(index=meta_data_index, columns=['value'])
     df_meta_data['value'][meta_data_index] = meta_data_value
     df_meta_data.to_csv(meta_data_file_path)
 
+    plot_color=["#F56867","#FEB915","#C798EE","#59BE86","#7495D3","#D1D1D1","#6D1A9C","#15821E","#3A84E6","#997273","#787878","#DB4C6C","#9E7A7A","#554236","#AF5F3C","#93796C","#F9BD3F","#DAB370","#877F6C","#268785"]
+    colors_to_plt = [plot_color[i%len(plot_color)] for i in labels]
+    print("Last layer got: ",np.unique(labels).shape)
+
     if dataset == 'Custom': rad = 700
     else: rad = 10
-    plt.figure(figsize=(5.5,5))
+    plt.figure(figsize=(5,5))
     plt.axis('off')
-    plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors, s=rad)
+    plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors_to_plt, s=rad)
     plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.png',format='png',dpi=1200,bbox_inches='tight',pad_inches=0)
     plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.eps',format='eps',dpi=1200,bbox_inches='tight',pad_inches=0)
 
     plt.close('all')
+
+    # print(report_map)
+    report_list.append(report_map)
+
+report_dataf = pd.DataFrame(report_list)
+report_dataf.to_csv(f'Report/report_{dataset}.csv')

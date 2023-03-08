@@ -1,0 +1,6 @@
+{
+    "dataset": "others",
+    "n_pcs": 30,
+    "simulation": 0,
+    "samples": ["adult_mouse_brain_ffpe_1"]
+}

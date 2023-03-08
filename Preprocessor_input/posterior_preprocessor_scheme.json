@@ -1,0 +1,6 @@
+{
+    "dataset": "others",
+    "n_pcs": 30,
+    "simulation": 0,
+    "samples": ["mouse_brain_posterior"]
+}
