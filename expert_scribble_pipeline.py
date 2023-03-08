@@ -336,7 +336,8 @@ for model in tqdm(models):
             no_of_scribble_layers = minLabels # **************** Addition *****************
             last_layer_channel_count = no_of_scribble_layers + added_layers
     else:
-        last_layer_channel_count = 100 + added_layers
+        # last_layer_channel_count = 100 + added_layers
+        last_layer_channel_count = added_layers
         nChannel = last_layer_channel_count
 
 
@@ -390,8 +391,10 @@ for model in tqdm(models):
     left_border = borders['left_border']
     up_border = borders['up_border']
     down_border = borders['down_border']
-    nw_border = borders['nw_border']
-    se_border = borders['se_border']
+
+    if sample != 'Melanoma':
+        nw_border = borders['nw_border']
+        se_border = borders['se_border']
 
     import warnings
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
@@ -421,15 +424,17 @@ for model in tqdm(models):
         HPz[left_border[:, 0], left_border[:, 1] - 1, :] = 0
         HPz[right_border[:, 0], right_border[:, 1], :] = 0
         
-        HP_diag = outputHP[1:,1:, :] - outputHP[0:-1, 0:-1, :]
-        HP_diag[nw_border[:, 0] - 1, nw_border[:, 1] - 1, :] = 0
-        HP_diag[se_border[:, 0], se_border[:, 1], :] = 0
+        if sample != 'Melanoma':
+            HP_diag = outputHP[1:,1:, :] - outputHP[0:-1, 0:-1, :]
+            HP_diag[nw_border[:, 0] - 1, nw_border[:, 1] - 1, :] = 0
+            HP_diag[se_border[:, 0], se_border[:, 1], :] = 0
 
 
         lhpy = loss_hpy(HPy, HPy_target)
         lhpz = loss_hpz(HPz, HPz_target)
         lhp_diag = 0
-        lhp_diag = loss_hp_diag(HP_diag, HP_diag_target)
+        if sample != 'Melanoma':
+            lhp_diag = loss_hp_diag(HP_diag, HP_diag_target)
         
 
         ignore, target = torch.max( output, 1 )
@@ -486,6 +491,7 @@ for model in tqdm(models):
                 loss = (L_sim + L_con + L_scr)
 
         else:
+            loss_without_hyperparam = loss_fn(output, target) + (lhpy + lhpz + lhp_diag)
             loss = (stepsize_sim * loss_fn(output, target) + stepsize_con * (lhpy + lhpz + lhp_diag)) # consider hyperparameter sum division later
 
         loss_without_hyperparam_list.append(loss_without_hyperparam.data.cpu().numpy())
@@ -570,17 +576,19 @@ for model in tqdm(models):
     df_barcode_labels_per_itr.to_csv(f'{leaf_output_folder_path}/barcode_labels_per_itr.csv')
 
     print("ARI:", calc_ari(df_man, df_labels))
-    print(f"L_sim: {L_sim}, L_con: {L_con}, L_scr: {L_scr}")
-    print(f"L_sim + L_con + L_scr: {L_sim + L_con + L_scr}")
-    print(f"Total loss: {loss}")
-    print(f"Loss without hyperparam: {loss_without_hyperparam}")
+    if scribble:
+        print(f"L_sim: {L_sim}, L_con: {L_con}, L_scr: {L_scr}")
+        print(f"L_sim + L_con + L_scr: {L_sim + L_con + L_scr}")
+        print(f"Total loss: {loss}")
+        print(f"Loss without hyperparam: {loss_without_hyperparam}")
 
 
     report_map['ari'] = calc_ari(df_man, df_labels)
-    report_map['loss_sim'] = L_sim.data.cpu().numpy()
-    report_map['loss_con'] = L_con.data.cpu().numpy()
-    report_map['loss_scr'] = L_scr.data.cpu().numpy()
-    report_map['loss_total'] = loss.data.cpu().numpy()
+    if scribble:
+        report_map['loss_sim'] = L_sim.data.cpu().numpy()
+        report_map['loss_con'] = L_con.data.cpu().numpy()
+        report_map['loss_scr'] = L_scr.data.cpu().numpy()
+        report_map['loss_total'] = loss.data.cpu().numpy()
 
     meta_data_value = [test_name, seed, dataset, sample, n_pcs, scribble, max_iter, stepsize_sim, stepsize_con, stepsize_scr, scheme, lr, nConv, no_of_scribble_layers, intermediate_channels, added_layers, last_layer_channel_count, hyper_sum_division]
     df_meta_data = pd.DataFrame(index=meta_data_index, columns=['value'])
@@ -592,10 +600,14 @@ for model in tqdm(models):
     print("Last layer got: ",np.unique(labels).shape)
 
     if dataset == 'Custom': rad = 700
+    elif dataset == 'Melanoma': rad = 30
     else: rad = 10
     plt.figure(figsize=(5,5))
     plt.axis('off')
-    plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors_to_plt, s=rad)
+    if sample != "Melanoma":
+        plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors_to_plt, s=rad)
+    else:
+        plt.scatter(grid_spots[:, 1], -1000 + grid_spots[:, 0], c=colors_to_plt, s=rad)
     plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.png',format='png',dpi=1200,bbox_inches='tight',pad_inches=0)
     plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.eps',format='eps',dpi=1200,bbox_inches='tight',pad_inches=0)
 
