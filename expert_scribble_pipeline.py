@@ -210,7 +210,11 @@ for model in tqdm(models):
             self.conv1 = nn.Conv2d(input_dim, intermediate_channels, kernel_size=1, stride=1, padding=0 )
             self.bn1 = nn.BatchNorm2d(intermediate_channels)
 
+            # inception_block(in_channels, out_1x1, red_3x3, out_3x3, red_5x5, out_5x5, out_1x1pool)
+
             self.inception3a = Inception_block(intermediate_channels, 160, 96, 64, 16, 16, 16)
+            # self.inception3a = Inception_block(intermediate_channels, 253, 96, 1, 16, 1, 1)
+            # self.conv2 = nn.Conv2d(intermediate_channels, 256, kernel_size=1, stride=1, padding=0 )
             self.bn_i_1 = nn.BatchNorm2d(256)
 
             self.inception3b = nn.ModuleList()
@@ -218,10 +222,12 @@ for model in tqdm(models):
 
             if nConv >= 1:
                 self.inception3b.append(Inception_block(256, 96, 32, 16, 16, 8, 8))
+                # self.inception3b.append(Inception_block(256, 125, 32, 1, 16, 1, 1))
                 self.bn_i_2.append(nn.BatchNorm2d(128))
 
                 for i in range(nConv-1):
-                    self.inception3b.append(Inception_block(128, 96, 32, 16, 16, 8, 8))
+                    # self.inception3b.append(Inception_block(128, 96, 32, 16, 16, 8, 8))
+                    self.inception3b.append(Inception_block(128, 125, 32, 1, 16, 1, 1))
                     self.bn_i_2.append(nn.BatchNorm2d(128))
 
             r = last_layer_channel_count
@@ -239,6 +245,7 @@ for model in tqdm(models):
             x = self.bn1(x)
             
             x = self.inception3a(x)
+            # x = self.conv2(x)
             x = F.relu( x )
             x = self.bn_i_1(x)
 
@@ -417,12 +424,12 @@ for model in tqdm(models):
 
 
         HPy = outputHP[1:, :, :] - outputHP[0:-1, :, :]
-        HPy[up_border[:, 0] - 1, up_border[:, 1], :] = 0
-        HPy[down_border[:, 0], down_border[:, 1], :] = 0
+        # HPy[up_border[:, 0] - 1, up_border[:, 1], :] = 0
+        # HPy[down_border[:, 0], down_border[:, 1], :] = 0
 
         HPz = outputHP[:, 1:, :] - outputHP[:, 0:-1, :]
-        HPz[left_border[:, 0], left_border[:, 1] - 1, :] = 0
-        HPz[right_border[:, 0], right_border[:, 1], :] = 0
+        # HPz[left_border[:, 0], left_border[:, 1] - 1, :] = 0
+        # HPz[right_border[:, 0], right_border[:, 1], :] = 0
         
         if sample != 'Melanoma':
             HP_diag = outputHP[1:,1:, :] - outputHP[0:-1, 0:-1, :]
@@ -600,7 +607,7 @@ for model in tqdm(models):
     print("Last layer got: ",np.unique(labels).shape)
 
     if dataset == 'Custom': rad = 700
-    elif dataset == 'Melanoma': rad = 30
+    elif sample == 'Melanoma': rad = 30
     else: rad = 10
     plt.figure(figsize=(5,5))
     plt.axis('off')

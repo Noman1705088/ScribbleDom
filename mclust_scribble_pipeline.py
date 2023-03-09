@@ -18,9 +18,11 @@ from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.metrics.pairwise import euclidean_distances
 import math
 from scipy import spatial
+from scipy import stats
 import json
 import random
 from os.path import exists
+from inception import Inception_block
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -58,6 +60,8 @@ miu_options = params['miu_options']
 niu_options = params['niu_options']
 lr_options = params['lr_options']
 
+refine = params['refinement_steps']
+
 use_cuda = torch.cuda.is_available()
 
 if use_cuda:
@@ -76,7 +80,7 @@ if scribble:
     else: scheme = 'Other_scribble'
 else: scheme = 'No_scribble'
 
-added_layers = 0
+# added_layers = 0
 intermediate_channels = n_pcs # was n_pcs
 hyper_sum_division = True
 meta_data_index = ['test_name', 'seed', 'dataset', 'sample', 'n_pcs', 'scribble', 'max_iter', 'sim', 'miu', 'niu', 'scheme', 'lr', 'nConv', 'no_of_scribble_layers', 'intermediate_channels', 'added_layers', 'last_layer_channel_count', 'hyper_sum_division']
@@ -203,28 +207,51 @@ for model in tqdm(models):
     class MyNet(nn.Module):
         def __init__(self,input_dim):
             super(MyNet, self).__init__()
-            self.conv1 = nn.Conv2d(input_dim, intermediate_channels, kernel_size=3, stride=1, padding=1 )
+            self.conv1 = nn.Conv2d(input_dim, intermediate_channels, kernel_size=1, stride=1, padding=0 )
             self.bn1 = nn.BatchNorm2d(intermediate_channels)
-            self.conv2 = nn.ModuleList()
-            self.bn2 = nn.ModuleList()
-            for i in range(nConv-1):
-                self.conv2.append( nn.Conv2d(intermediate_channels, intermediate_channels, kernel_size=3, stride=1, padding=1 ) )
-                self.bn2.append( nn.BatchNorm2d(intermediate_channels) )
+
+            # inception_block(in_channels, out_1x1, red_3x3, out_3x3, red_5x5, out_5x5, out_1x1pool)
+
+            self.inception3a = Inception_block(intermediate_channels, 160, 96, 64, 16, 16, 16)
+            # self.inception3a = Inception_block(intermediate_channels, 253, 96, 1, 16, 1, 1)
+            self.bn_i_1 = nn.BatchNorm2d(256)
+
+            self.inception3b = nn.ModuleList()
+            self.bn_i_2 = nn.ModuleList()
+
+            if nConv >= 1:
+                self.inception3b.append(Inception_block(256, 96, 32, 16, 16, 8, 8))
+                # self.inception3b.append(Inception_block(256, 125, 32, 1, 16, 1, 1))
+                self.bn_i_2.append(nn.BatchNorm2d(128))
+
+                for i in range(nConv-1):
+                    self.inception3b.append(Inception_block(128, 96, 32, 16, 16, 8, 8))
+                    # self.inception3b.append(Inception_block(128, 125, 32, 1, 16, 1, 1))
+                    self.bn_i_2.append(nn.BatchNorm2d(128))
 
             r = last_layer_channel_count
 
             print('last layer size:', r)
-            self.conv3 = nn.Conv2d(intermediate_channels, r, kernel_size=1, stride=1, padding=0 )
+            if nConv>=1:
+                self.conv3 = nn.Conv2d(128, r, kernel_size=1, stride=1, padding=0 )
+            else:
+                self.conv3 = nn.Conv2d(256, r, kernel_size=1, stride=1, padding=0 )
             self.bn3 = nn.BatchNorm2d(r)
 
         def forward(self, x):
             x = self.conv1(x)
             x = F.relu( x )
             x = self.bn1(x)
-            for i in range(nConv-1):
-                x = self.conv2[i](x)
+            
+            x = self.inception3a(x)
+            x = F.relu( x )
+            x = self.bn_i_1(x)
+
+            for i in range(nConv):
+                x = self.inception3b[i](x)
                 x = F.relu( x )
-                x = self.bn2[i](x)
+                x = self.bn_i_2[i](x)
+
             x = self.conv3(x)
             x = self.bn3(x)
             return x
@@ -541,6 +568,33 @@ for model in tqdm(models):
         im_target_rgb = np.array([label_colours[ c % nChannel ] for c in im_target])
         im_target_rgb = im_target_rgb.reshape( np.array([im.shape[0],im.shape[1],3]).astype( np.uint8 ))
         im_cluster_num = im_target.reshape(im.shape[0], im.shape[1])
+
+        # refine the cluster label, so that the cluster label is the same as the majority label of the pixels in the neighborhood
+        def refine_cluster_label(im_cluster_num, im, radius = 1):
+            im_cluster_num_refined = im_cluster_num.copy()
+            for i in range(im.shape[0]):
+                for j in range(im.shape[1]):
+                    if im_cluster_num[i, j] == 110: continue
+                    else:
+                        cluster_label = im_cluster_num[i, j]
+                        cluster_label_count = 0
+                        other_cluster_labels = []
+                        for k in range(-radius, radius + 1):
+                            for l in range(-radius, radius + 1):
+                                if i + k < 0 or i + k >= im.shape[0] or j + l < 0 or j + l >= im.shape[1]: continue
+                                if im_cluster_num[i + k, j + l] == 110: continue
+                                if im_cluster_num[i + k, j + l] == cluster_label: cluster_label_count += 1
+                                else : other_cluster_labels.append(im_cluster_num[i + k, j + l])
+                        if cluster_label_count < 5:
+                            max_item,count = stats.mode(np.array(other_cluster_labels))
+                            if len(count) != 0 and count[0] > 5:
+                                im_cluster_num_refined[i, j] = max_item[0]
+            return im_cluster_num_refined
+        im_cluster_num_refined = im_cluster_num.copy()
+        for i in range(refine):
+            im_cluster_num_refined = refine_cluster_label(im_cluster_num_refined, im, radius = 1)
+        im_cluster_num = im_cluster_num_refined
+
         f = im_cluster_num
         s = np.argwhere(f != 110) # not a good way
         colors = f.flatten()
@@ -580,6 +634,8 @@ for model in tqdm(models):
         df_meta_data = pd.DataFrame(index=meta_data_index, columns=[f'{train_type}_value'])
         df_meta_data[f'{train_type}_value'][meta_data_index] = meta_data_value
         df_meta_data.to_csv(f'{leaf_output_folder_path}/{train_type}_meta_data.csv')
+
+        print("last layer got:",np.unique(labels).shape)
 
         if dataset == 'Custom': rad = 700
         else: rad = 10
