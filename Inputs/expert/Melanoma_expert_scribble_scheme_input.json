@@ -14,8 +14,8 @@
     "last_layer_channel_count": 100,
     "hyper_sum_division": 1,
     "seed_options": [4],
-    "sim_options": [6],
-    "miu_options": [0],
+    "sim_options": [3],
+    "miu_options": [10],
     "niu_options": [1],
     "lr_options": [0.1],
     "samples": ["Melanoma"]

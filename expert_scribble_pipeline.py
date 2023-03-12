@@ -607,9 +607,11 @@ for model in tqdm(models):
     print("Last layer got: ",np.unique(labels).shape)
 
     if dataset == 'Custom': rad = 700
-    elif sample == 'Melanoma': rad = 30
+    elif sample == 'Melanoma': rad = 120
     else: rad = 10
-    plt.figure(figsize=(5,5))
+
+    if sample == 'Melanoma': plt.figure(figsize=(1+5,5))
+    else: plt.figure(figsize=(5,5))
     plt.axis('off')
     if sample != "Melanoma":
         plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors_to_plt, s=rad)
