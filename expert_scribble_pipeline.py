@@ -175,6 +175,7 @@ for model in tqdm(models):
     make_directory_if_not_exist(output_folder_path)
     make_directory_if_not_exist(labels_per_itr_folder_path)
     make_directory_if_not_exist(image_per_itr_folder_path)
+    make_directory_if_not_exist("./Report")
 
     # %%
     with open(map_pixel_to_grid_spot_file_path, 'r') as f:
