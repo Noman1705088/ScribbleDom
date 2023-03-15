@@ -405,8 +405,8 @@ for model in tqdm(models):
     left_border = borders['left_border']
     up_border = borders['up_border']
     down_border = borders['down_border']
-    nw_border = borders['nw_border']
-    se_border = borders['se_border']
+    # nw_border = borders['nw_border']
+    # se_border = borders['se_border']
 
     import warnings
     warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
@@ -453,16 +453,16 @@ for model in tqdm(models):
 
 
             HPy = outputHP[1:, :, :] - outputHP[0:-1, :, :]
-            HPy[up_border[:, 0] - 1, up_border[:, 1], :] = 0
-            HPy[down_border[:, 0], down_border[:, 1], :] = 0
+            # HPy[up_border[:, 0] - 1, up_border[:, 1], :] = 0
+            # HPy[down_border[:, 0], down_border[:, 1], :] = 0
 
             HPz = outputHP[:, 1:, :] - outputHP[:, 0:-1, :]
-            HPz[left_border[:, 0], left_border[:, 1] - 1, :] = 0
-            HPz[right_border[:, 0], right_border[:, 1], :] = 0
+            # HPz[left_border[:, 0], left_border[:, 1] - 1, :] = 0
+            # HPz[right_border[:, 0], right_border[:, 1], :] = 0
             
             HP_diag = outputHP[1:,1:, :] - outputHP[0:-1, 0:-1, :]
-            HP_diag[nw_border[:, 0] - 1, nw_border[:, 1] - 1, :] = 0
-            HP_diag[se_border[:, 0], se_border[:, 1], :] = 0
+            # HP_diag[nw_border[:, 0] - 1, nw_border[:, 1] - 1, :] = 0
+            # HP_diag[se_border[:, 0], se_border[:, 1], :] = 0
 
 
             lhpy = loss_hpy(HPy, HPy_target)
@@ -638,10 +638,14 @@ for model in tqdm(models):
         print("last layer got:",np.unique(labels).shape)
 
         if dataset == 'Custom': rad = 700
+        elif sample == 'Melanoma': rad = 110
         else: rad = 10
         plt.figure(figsize=(5.5,5))
         plt.axis('off')
-        plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors, s=rad)
+        if sample == 'Melanoma': 
+            plt.scatter(grid_spots[:, 1], -1000 + grid_spots[:, 0], c=colors, s=rad)
+        else:
+            plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors, s=rad)
         plt.savefig(f'{leaf_output_folder_path}/{train_type}_seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.png',format='png',dpi=1200,bbox_inches='tight',pad_inches=0)
         plt.savefig(f'{leaf_output_folder_path}/{train_type}_seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.eps',format='eps',dpi=1200,bbox_inches='tight',pad_inches=0)
         plt.close('all')

@@ -226,8 +226,8 @@ for model in tqdm(models):
                 self.bn_i_2.append(nn.BatchNorm2d(128))
 
                 for i in range(nConv-1):
-                    # self.inception3b.append(Inception_block(128, 96, 32, 16, 16, 8, 8))
-                    self.inception3b.append(Inception_block(128, 125, 32, 1, 16, 1, 1))
+                    self.inception3b.append(Inception_block(128, 96, 32, 16, 16, 8, 8))
+                    # self.inception3b.append(Inception_block(128, 125, 32, 1, 16, 1, 1))
                     self.bn_i_2.append(nn.BatchNorm2d(128))
 
             r = last_layer_channel_count

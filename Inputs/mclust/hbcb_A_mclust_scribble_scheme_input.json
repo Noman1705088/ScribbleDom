@@ -7,7 +7,7 @@
     "mclust_pre_heat": 1,
     "nChannel": 100,
     "max_iter": 300,
-    "nConv": 2,
+    "nConv": 1,
     "visualize": 0,
     "refinement_steps": 2,
     "pre_heat_max_iter": 10000,
