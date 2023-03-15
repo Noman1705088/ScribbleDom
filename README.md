@@ -54,22 +54,23 @@ Scribbles can be generated using [Loupe browser](https://support.10xgenomics.com
 After setting up the input parameters on ```./Inputs/[file_name].json```, the following steps are required to run ScribbleSeg:
 1. At first you have to run preprocessor.py. For expert scribble scheme, run the following:
 ```
-python preprocessor.py --scheme expert
+python preprocessor.py --scheme expert --params "Preprocessor_input/bcdc_preprocessor_scheme.json"
 ```
 Or, for mclust scribble scheme, run the following:
 ```
-python preprocessor.py --scheme mclust
+python preprocessor.py --scheme mclust --params Preprocessor_input/bcdc_preprocessor_scheme.json
 ```
 2. Then, to generate the segmentations for expert scribble scheme, run:
 ```
-python expert_scribble_pipeline.py --params ./Inputs/expert_scribble_scheme_input.json
+python expert_scribble_pipeline.py --params ./Inputs/expert/bcdc_expert_scribble_scheme_input.json
 ```
 Or, to generate the segmentations for mclust scribble scheme, run:
 ```
-python mclust_scribble_pipeline.py --params ./Inputs/mclust_scribble_scheme_input.json
+python mclust_scribble_pipeline.py --params ./Inputs/mclust/bcdc_mclust_scribble_scheme_input.json
 ```
 3. Results will be put in Outputs directory.
 4. To calculate adjusted rand index (ARI), you will need the ground truth labels. Put the ground truth labels at ```./Data/[dataset name]/[sample name]/manual_annotations.csv```.
+5. 
 
 # Other Informations
 The folder ```Supplementary_figures``` has the high quality figures of the supplementary information of our research paper.
