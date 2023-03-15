@@ -73,3 +73,5 @@ python mclust_scribble_pipeline.py --params ./Inputs/mclust_scribble_scheme_inpu
 
 # Other Informations
 The folder ```Supplementary_figures``` has the high quality figures of the supplementary information of our research paper.
+
+For the local data goto link : https://drive.google.com/drive/folders/1PIsWdA65sJVAgxi0gfrNFzrx_HGpvCyX?usp=share_link
