@@ -56,6 +56,8 @@ miu_options = params['miu_options']
 niu_options = params['niu_options']
 lr_options = params['lr_options']
 
+alpha_options = params['alpha_options']
+
 refine = params['refinement_steps']
 
 use_cuda = torch.cuda.is_available()
@@ -75,7 +77,7 @@ else: scheme = 'No_scribble'
 
 intermediate_channels = n_pcs # was n_pcs
 
-meta_data_index = ['test_name', 'seed', 'dataset', 'sample', 'n_pcs', 'scribble', 'max_iter', 'sim', 'miu', 'niu', 'scheme', 'lr', 'nConv', 'no_of_scribble_layers', 'intermediate_channels', 'added_layers', 'last_layer_channel_count', 'hyper_sum_division']
+meta_data_index = ['test_name', 'seed', 'dataset', 'sample', 'n_pcs', 'scribble', 'max_iter', 'sim', 'miu', 'niu','alpha', 'scheme', 'lr', 'nConv', 'no_of_scribble_layers', 'intermediate_channels', 'added_layers', 'last_layer_channel_count', 'hyper_sum_division']
 
 test_name = f'{test_folder_base_name}_itr_{max_iter}'
 # seed_options = pd.read_csv('./Data/seed_list.csv')['seeds'].values
@@ -89,16 +91,18 @@ for sample in samples:
             for miu in miu_options:
                 for niu in niu_options:
                     for lr in lr_options:
-                        models.append(
-                            {
-                                'seed': seed,
-                                'stepsize_sim': sim,
-                                'stepsize_con': miu,
-                                'stepsize_scr': niu,
-                                'lr': lr,
-                                'sample': sample
-                            }
-                        )
+                        for alpha in alpha_options:
+                            models.append(
+                                {
+                                    'seed': seed,
+                                    'stepsize_sim': sim,
+                                    'stepsize_con': miu,
+                                    'stepsize_scr': niu,
+                                    'lr': lr,
+                                    'sample': sample,
+                                    'alpha': alpha
+                                }
+                            )
 
 # %%
 report_list = []
@@ -111,20 +115,24 @@ for model in tqdm(models):
     stepsize_scr = model['stepsize_scr']
     sample = model['sample']
 
+    alpha = model['alpha']
+
     print("************************************************")
     print('Model description:')
     print(f'sample: {sample}')
     print(f'seed: {seed}')
     print(f'lr: {lr}')
-    print(f'sim: {stepsize_sim}')
-    print(f'miu: {stepsize_con}')
-    print(f'niu: {stepsize_scr}')
+    # print(f'sim: {stepsize_sim}')
+    # print(f'miu: {stepsize_con}')
+    # print(f'niu: {stepsize_scr}')
+    print(f'alpha: {alpha}')
 
     report_map['sample'] = sample
     report_map['seed'] = seed
     report_map['sim'] = stepsize_sim
     report_map['miu'] = stepsize_con
     report_map['niu'] = stepsize_scr
+    report_map['alpha'] = alpha
     report_map['refinement_steps'] = refine
 
     npz_path = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Npzs'
@@ -155,7 +163,8 @@ for model in tqdm(models):
     manual_annotation_file_path = f'./Data/{dataset}/{sample}/manual_annotations.csv'
 
     output_folder_path = f'./Outputs/{test_name}/{dataset}/{sample}'
-    leaf_output_folder_path = f'{output_folder_path}/{scheme}/{n_pcs}_pcs/Seed_{seed}/Lr_{lr}/Hyper_{stepsize_sim}_{stepsize_con}_{stepsize_scr}'
+    # leaf_output_folder_path = f'{output_folder_path}/{scheme}/{n_pcs}_pcs/Seed_{seed}/Lr_{lr}/Hyper_{stepsize_sim}_{stepsize_con}_{stepsize_scr}'
+    leaf_output_folder_path = f'{output_folder_path}/{scheme}/{n_pcs}_pcs/Seed_{seed}/Lr_{lr}/Hyper_{alpha}'
     labels_per_itr_folder_path = f'{leaf_output_folder_path}/Labels_per_itr/'
     image_per_itr_folder_path = f'{leaf_output_folder_path}/Image_per_itr/'
     meta_data_file_path = f'{leaf_output_folder_path}/meta_data.csv'
@@ -425,12 +434,14 @@ for model in tqdm(models):
 
 
         HPy = outputHP[1:, :, :] - outputHP[0:-1, :, :]
-        # HPy[up_border[:, 0] - 1, up_border[:, 1], :] = 0
-        # HPy[down_border[:, 0], down_border[:, 1], :] = 0
+        if sample != 'Melanoma':
+            HPy[up_border[:, 0] - 1, up_border[:, 1], :] = 0
+            HPy[down_border[:, 0], down_border[:, 1], :] = 0
 
         HPz = outputHP[:, 1:, :] - outputHP[:, 0:-1, :]
-        # HPz[left_border[:, 0], left_border[:, 1] - 1, :] = 0
-        # HPz[right_border[:, 0], right_border[:, 1], :] = 0
+        if sample != 'Melanoma':
+            HPz[left_border[:, 0], left_border[:, 1] - 1, :] = 0
+            HPz[right_border[:, 0], right_border[:, 1], :] = 0
         
         if sample != 'Melanoma':
             HP_diag = outputHP[1:,1:, :] - outputHP[0:-1, 0:-1, :]
@@ -497,6 +508,8 @@ for model in tqdm(models):
                 loss = (L_sim + L_con + L_scr) / hyper_sum
             else:
                 loss = (L_sim + L_con + L_scr)
+
+            loss = alpha * loss_sim + (1 - alpha) * loss_lr
 
         else:
             loss_without_hyperparam = loss_fn(output, target) + (lhpy + lhpz + lhp_diag)
@@ -598,7 +611,7 @@ for model in tqdm(models):
         report_map['loss_scr'] = L_scr.data.cpu().numpy()
         report_map['loss_total'] = loss.data.cpu().numpy()
 
-    meta_data_value = [test_name, seed, dataset, sample, n_pcs, scribble, max_iter, stepsize_sim, stepsize_con, stepsize_scr, scheme, lr, nConv, no_of_scribble_layers, intermediate_channels, added_layers, last_layer_channel_count, hyper_sum_division]
+    meta_data_value = [test_name, seed, dataset, sample, n_pcs, scribble, max_iter, stepsize_sim, stepsize_con, stepsize_scr,alpha, scheme, lr, nConv, no_of_scribble_layers, intermediate_channels, added_layers, last_layer_channel_count, hyper_sum_division]
     df_meta_data = pd.DataFrame(index=meta_data_index, columns=['value'])
     df_meta_data['value'][meta_data_index] = meta_data_value
     df_meta_data.to_csv(meta_data_file_path)
@@ -618,8 +631,10 @@ for model in tqdm(models):
         plt.scatter(grid_spots[:, 1], 1000 - grid_spots[:, 0], c=colors_to_plt, s=rad)
     else:
         plt.scatter(grid_spots[:, 1], -1000 + grid_spots[:, 0], c=colors_to_plt, s=rad)
-    plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.png',format='png',dpi=1200,bbox_inches='tight',pad_inches=0)
-    plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.eps',format='eps',dpi=1200,bbox_inches='tight',pad_inches=0)
+    # plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.png',format='png',dpi=1200,bbox_inches='tight',pad_inches=0)
+    # plt.savefig(f'{leaf_output_folder_path}/seg_{stepsize_sim}_{stepsize_con}_{stepsize_scr}_seed_{seed}_pcs_{n_pcs}.eps',format='eps',dpi=1200,bbox_inches='tight',pad_inches=0)
+    plt.savefig(f'{leaf_output_folder_path}/seg_{alpha}.png',format='png',dpi=1200,bbox_inches='tight',pad_inches=0)
+    plt.savefig(f'{leaf_output_folder_path}/seg_{alpha}.eps',format='eps',dpi=1200,bbox_inches='tight',pad_inches=0)
 
     plt.close('all')
 
