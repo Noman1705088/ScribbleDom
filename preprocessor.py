@@ -12,7 +12,7 @@ import json
 import argparse
 
 parser = argparse.ArgumentParser(description='ScribbleSeg Preprocessor')
-parser.add_argument('--scheme', help="'expert' for expert scribbles, 'mclst' for mclust label initialization", required=True)
+parser.add_argument('--scheme', help="'expert' for expert scribbles, 'mclst' for mclust label initialization, 'mclust_backbone' for mclust backbone scribble", required=True)
 
 # args = parser.parse_args()
 
@@ -53,8 +53,8 @@ for sample in samples:
     adata.var_names_make_unique()
     
 
-    mclust_scr = False
-    if args.scheme == 'mclust':mclust_scr=True
+    # mclust_scr = False
+    # if args.scheme == 'mclust':mclust_scr=True
 
     
 
@@ -71,9 +71,13 @@ for sample in samples:
     scr_csv_path = f'./Data/{dataset}/{sample}/manual_scribble.csv'
     scr_file_path = f'./Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_1.npy'
 
-    if mclust_scr:
+    if args.scheme == 'mclust':
         scr_csv_path = f'./Data/{dataset}/{sample}/mclust_result.csv'
         scr_file_path = f'./Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/mclust_scribble.npy'
+
+    elif args.scheme == 'mclust_backbone':
+        scr_csv_path = f'./Data/{dataset}/{sample}/mclust_backbone.csv'
+        scr_file_path = f'./Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/mclust_backbone_scribble.npy'
 
 
     # %%
