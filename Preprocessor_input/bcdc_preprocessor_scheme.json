@@ -1,6 +1,6 @@
 {
     "dataset": "others",
-    "n_pcs": 30,
+    "n_pcs": 15,
     "simulation": 0,
     "samples": ["bcdc_ffpe"]
 }

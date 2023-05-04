@@ -1,5 +1,5 @@
 {
-    "test_folder_base_name": "Final_seed_test_expert_scr_init_with_hyper_sum_with_gpu",
+    "test_folder_base_name": "Mclust_probabilities_10_percent_spots",
     "dataset": "Human_DLPFC",
     "n_pcs": 15,
     "scribble": 1,
@@ -7,7 +7,7 @@
     "nChannel": 100,
     "max_iter": 300,
     "nConv": 1,
-    "refinement_steps": 2,
+    "refinement_steps": 0,
     "visualize": 0,
     "use_background_scribble": 0,
     "added_layers": 0,

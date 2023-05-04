@@ -145,7 +145,8 @@ for model in tqdm(models):
         if not os.path.exists(path):
             os.makedirs(path)
 
-    scribble_img = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_1.npy'
+    scribble_img = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_mclust_10_percent.npy'
+
     if mclust_scribble:
         scribble_img = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/mclust_scribble.npy'
     local_data_folder_path = './Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data'
@@ -402,12 +403,13 @@ for model in tqdm(models):
     loss_comparison = 0
 
     # %%
-    borders = np.load(border)
+    if sample != 'Melanoma':
+        borders = np.load(border)
 
-    right_border = borders['right_border']
-    left_border = borders['left_border']
-    up_border = borders['up_border']
-    down_border = borders['down_border']
+        right_border = borders['right_border']
+        left_border = borders['left_border']
+        up_border = borders['up_border']
+        down_border = borders['down_border']
 
     if sample != 'Melanoma':
         nw_border = borders['nw_border']
@@ -591,7 +593,28 @@ for model in tqdm(models):
     df_labels = pd.DataFrame({'label': labels}, index=pixel_barcode[pixel_barcode != ''])
     df_labels.to_csv(f'{leaf_output_folder_path}/final_barcode_labels.csv')
 
+    if sample == 'bcdc_ffpe' or sample == 'Melanoma':
+        df_bayesSpace = pd.read_csv(f'/home/nuwaisir/Corridor/Thesis_ug/ScribbleSeg_Revision_working/Data/others/{sample}/BayesSpace_output.csv')
+        ari_bayesSpace = calc_ari(df_man, df_bayesSpace['spatial.cluster'])
+        print('ari_bayesSpace', ari_bayesSpace)
+        report_map['ari_bayesSpace'] = ari_bayesSpace
+
+    if sample == 'Melanoma':
+        df_manual_partial = pd.read_csv('/home/nuwaisir/Corridor/Thesis_ug/ScribbleSeg_Revision_working/Data/others/Melanoma/manual_annotations_wo_unannotated_reg.csv', index_col=0)
+        ari_partial = calc_ari(df_manual_partial, df_labels.loc[df_manual_partial.index])
+        ari_partial_bayesSpace = calc_ari(df_manual_partial, df_bayesSpace['spatial.cluster'].loc[df_manual_partial.index])
+        print('ARI partial:', ari_partial)
+        print('ARI partial BayesSpace:', ari_partial_bayesSpace)
+        report_map['ari_partial'] = ari_partial
+        report_map['ari_partial_bayesSpace'] = ari_partial_bayesSpace
+    
+
+
     df_final_metrics = pd.DataFrame({'ARI': df_ari_per_itr['ARI'].values[-1:], 'Loss': df_loss_per_itr['Loss'].values[-1:], 'Loss_without_hyperparam': df_loss_without_hyperparam_per_itr['Loss_without_hyperparam'].values[-1:]})
+
+    if sample == 'Melanoma':
+        df_final_metrics['ARI partial'] = [ari_partial]
+    
     df_final_metrics.to_csv(f'{leaf_output_folder_path}/final_metrics.csv')
 
     df_barcode_labels_per_itr.to_csv(f'{leaf_output_folder_path}/barcode_labels_per_itr.csv')
@@ -605,6 +628,9 @@ for model in tqdm(models):
 
 
     report_map['ari'] = calc_ari(df_man, df_labels)
+
+    
+
     if scribble:
         report_map['loss_sim'] = L_sim.data.cpu().numpy()
         report_map['loss_con'] = L_con.data.cpu().numpy()

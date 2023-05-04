@@ -399,12 +399,13 @@ for model in tqdm(models):
     loss_comparison = 0
 
     # %%
-    borders = np.load(border)
+    if sample != 'Melanoma':
+        borders = np.load(border)
 
-    right_border = borders['right_border']
-    left_border = borders['left_border']
-    up_border = borders['up_border']
-    down_border = borders['down_border']
+        right_border = borders['right_border']
+        left_border = borders['left_border']
+        up_border = borders['up_border']
+        down_border = borders['down_border']
     # nw_border = borders['nw_border']
     # se_border = borders['se_border']
 
@@ -618,6 +619,22 @@ for model in tqdm(models):
 
         df_labels = pd.DataFrame({f'{train_type}_label': labels}, index=pixel_barcode[pixel_barcode != ''])
         df_labels.to_csv(f'{leaf_output_folder_path}/{train_type}_final_barcode_labels.csv')
+
+        if sample == 'bcdc_ffpe' or sample == 'Melanoma':
+            df_bayesSpace = pd.read_csv(f'/home/nuwaisir/Corridor/Thesis_ug/ScribbleSeg_Revision_working/Data/others/{sample}/BayesSpace_output.csv', index_col=0)
+            ari_bayesSpace = calc_ari(df_man, df_bayesSpace['spatial.cluster'])
+            print('ari_bayesSpace', ari_bayesSpace)
+            # report_map['ari_bayesSpace'] = ari_bayesSpace
+
+        if sample == 'Melanoma':
+            df_manual_partial = pd.read_csv('/home/nuwaisir/Corridor/Thesis_ug/ScribbleSeg_Revision_working/Data/others/Melanoma/manual_annotations_wo_unannotated_reg.csv', index_col=0)
+            ari_partial = calc_ari(df_manual_partial, df_labels.loc[df_manual_partial.index])
+            # print(df_bayesSpace)
+            ari_partial_bayesSpace = calc_ari(df_manual_partial, df_bayesSpace.loc[df_manual_partial.index]['spatial.cluster'])
+            print('ARI partial:', ari_partial)
+            print('ARI partial BayesSpace:', ari_partial_bayesSpace)
+            # report_map['ari_partial'] = ari_partial
+            # report_map['ari_partial_bayesSpace'] = ari_partial_bayesSpace
 
         df_final_metrics = pd.DataFrame({f'{train_type}_ARI': df_ari_per_itr[f'{train_type}_ARI'].values[-1:], f'{train_type}_Loss': df_loss_per_itr[f'{train_type}_Loss'].values[-1:], f'{train_type}_Loss_without_hyperparam': df_loss_without_hyperparam_per_itr[f'{train_type}_Loss_without_hyperparam'].values[-1:]})
         df_final_metrics.to_csv(f'{leaf_output_folder_path}/{train_type}_final_metrics.csv')
