@@ -68,7 +68,8 @@ for sample in samples:
     map_pixel_to_grid_spot_file_path = f'{local_data_folder_path}/{dataset}/{sample}/Jsons/map_pixel_to_grid_spot.json'
 
     pc_csv_path = f'./Data/{dataset}/{sample}/Principal_Components/CSV/pcs_{n_pcs}_from_bayesSpace_top_2000_HVGs.csv'
-    scr_csv_path = f'./Data/{dataset}/{sample}/mclust_scribble_10_percent.csv'
+    # scr_csv_path = f'./Data/{dataset}/{sample}/mclust_scribble_10_percent.csv'
+    scr_csv_path = f'./Data/{dataset}/{sample}/manual_scribble.csv'
     scr_file_path = f'./Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_mclust_10_percent.npy'
 
     if args.scheme == 'mclust':

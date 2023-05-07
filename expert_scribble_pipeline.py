@@ -145,7 +145,8 @@ for model in tqdm(models):
         if not os.path.exists(path):
             os.makedirs(path)
 
-    scribble_img = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_mclust_10_percent.npy'
+    # scribble_img = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_mclust_10_percent.npy'
+    scribble_img = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_1.npy'
 
     if mclust_scribble:
         scribble_img = f'Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/mclust_scribble.npy'
@@ -388,7 +389,8 @@ for model in tqdm(models):
         HPz_target = HPz_target.cuda()
         HP_diag_target = HP_diag_target.cuda()
         
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     label_colours = np.random.randint(255,size=(255,3))
 
     label_colours[0,:] = [255,255,255]
@@ -511,6 +513,7 @@ for model in tqdm(models):
             else:
                 loss = (L_sim + L_con + L_scr)
 
+            # loss = alpha * loss_sim + (1 - alpha) * loss_lr + (lhpy + lhpz + lhp_diag)/3
             loss = alpha * loss_sim + (1 - alpha) * loss_lr
 
         else:
@@ -520,9 +523,11 @@ for model in tqdm(models):
         loss_without_hyperparam_list.append(loss_without_hyperparam.data.cpu().numpy())
         loss_per_itr.append(loss.data.cpu().numpy())
         
+        # loss_list.append(loss.data.cpu().numpy())
 
         loss.backward()
         optimizer.step()
+    
 
     # %%
     output = model( data )[ 0 ]
@@ -594,13 +599,14 @@ for model in tqdm(models):
     df_labels.to_csv(f'{leaf_output_folder_path}/final_barcode_labels.csv')
 
     if sample == 'bcdc_ffpe' or sample == 'Melanoma':
-        df_bayesSpace = pd.read_csv(f'/home/nuwaisir/Corridor/Thesis_ug/ScribbleSeg_Revision_working/Data/others/{sample}/BayesSpace_output.csv')
+        df_bayesSpace = pd.read_csv(f'./Data/others/{sample}/BayesSpace_output.csv')
         ari_bayesSpace = calc_ari(df_man, df_bayesSpace['spatial.cluster'])
         print('ari_bayesSpace', ari_bayesSpace)
         report_map['ari_bayesSpace'] = ari_bayesSpace
 
     if sample == 'Melanoma':
-        df_manual_partial = pd.read_csv('/home/nuwaisir/Corridor/Thesis_ug/ScribbleSeg_Revision_working/Data/others/Melanoma/manual_annotations_wo_unannotated_reg.csv', index_col=0)
+        df_bayesSpace.set_index('Unnamed: 0', inplace=True)
+        df_manual_partial = pd.read_csv('./Data/others/Melanoma/manual_annotations_wo_unannotated_reg.csv', index_col=0)
         ari_partial = calc_ari(df_manual_partial, df_labels.loc[df_manual_partial.index])
         ari_partial_bayesSpace = calc_ari(df_manual_partial, df_bayesSpace['spatial.cluster'].loc[df_manual_partial.index])
         print('ARI partial:', ari_partial)
