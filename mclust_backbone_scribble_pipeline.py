@@ -488,10 +488,12 @@ for model in tqdm(models):
     
             loss_lr = 0
             for i in range(mask_inds.shape[0]):
-                loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
+                # loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
+                if np.random.rand() <= 0.5:
+                    loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
 
-            loss_sim = loss_fn(output[ inds_sim ], target[ inds_sim ])
-            # loss_sim = loss_fn(output, target)
+            # loss_sim = loss_fn(output[ inds_sim ], target[ inds_sim ])
+            loss_sim = loss_fn(output, target)
             hyper_sum = stepsize_sim + stepsize_scr + stepsize_con
 
             sim_multiplier = 1
@@ -596,6 +598,23 @@ for model in tqdm(models):
     df_barcode_labels_per_itr.to_csv(f'{leaf_output_folder_path}/barcode_labels_per_itr.csv')
 
     print("ARI:", calc_ari(df_man, df_labels))
+    if sample == 'bcdc_ffpe' or sample == 'Melanoma':
+        df_bayesSpace = pd.read_csv(f'./Data/others/{sample}/BayesSpace_output.csv')
+        df_bayesSpace.set_index('Unnamed: 0', inplace=True)
+        ari_bayesSpace = calc_ari(df_man, df_bayesSpace['spatial.cluster'])
+        print('ari_bayesSpace', ari_bayesSpace)
+        report_map['ari_bayesSpace'] = ari_bayesSpace
+
+    if sample == 'Melanoma':
+        # df_bayesSpace.set_index('Unnamed: 0', inplace=True)
+        df_manual_partial = pd.read_csv('./Data/others/Melanoma/manual_annotations_wo_unannotated_reg.csv', index_col=0)
+        ari_partial = calc_ari(df_manual_partial, df_labels.loc[df_manual_partial.index])
+        ari_partial_bayesSpace = calc_ari(df_manual_partial, df_bayesSpace['spatial.cluster'].loc[df_manual_partial.index])
+        print('ARI partial:', ari_partial)
+        print('ARI partial BayesSpace:', ari_partial_bayesSpace)
+        report_map['ari_partial'] = ari_partial
+        report_map['ari_partial_bayesSpace'] = ari_partial_bayesSpace
+
     if scribble:
         print(f"L_sim: {L_sim}, L_con: {L_con}, L_scr: {L_scr}")
         print(f"L_sim + L_con + L_scr: {L_sim + L_con + L_scr}")

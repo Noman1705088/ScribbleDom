@@ -389,8 +389,8 @@ for model in tqdm(models):
         HPz_target = HPz_target.cuda()
         HP_diag_target = HP_diag_target.cuda()
         
-    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    # optimizer = optim.Adam(model.parameters(), lr=lr)
     label_colours = np.random.randint(255,size=(255,3))
 
     label_colours[0,:] = [255,255,255]
@@ -515,6 +515,7 @@ for model in tqdm(models):
 
             # loss = alpha * loss_sim + (1 - alpha) * loss_lr + (lhpy + lhpz + lhp_diag)/3
             loss = alpha * loss_sim + (1 - alpha) * loss_lr
+            # print(f'loss_sim: {loss_sim}, loss_lr: {loss_lr})')
 
         else:
             loss_without_hyperparam = loss_fn(output, target) + (lhpy + lhpz + lhp_diag)
@@ -554,9 +555,9 @@ for model in tqdm(models):
                             if im_cluster_num[i + k, j + l] == 110: continue
                             if im_cluster_num[i + k, j + l] == cluster_label: cluster_label_count += 1
                             else : other_cluster_labels.append(im_cluster_num[i + k, j + l])
-                    if cluster_label_count < 5:
+                    if cluster_label_count < 4:
                         max_item,count = stats.mode(np.array(other_cluster_labels))
-                        if len(count) != 0 and count[0] > 5:
+                        if len(count) != 0 and count[0] >= 4:
                             im_cluster_num_refined[i, j] = max_item[0]
         return im_cluster_num_refined
     im_cluster_num_refined = im_cluster_num.copy()
@@ -600,12 +601,13 @@ for model in tqdm(models):
 
     if sample == 'bcdc_ffpe' or sample == 'Melanoma':
         df_bayesSpace = pd.read_csv(f'./Data/others/{sample}/BayesSpace_output.csv')
+        df_bayesSpace.set_index('Unnamed: 0', inplace=True)
         ari_bayesSpace = calc_ari(df_man, df_bayesSpace['spatial.cluster'])
         print('ari_bayesSpace', ari_bayesSpace)
         report_map['ari_bayesSpace'] = ari_bayesSpace
 
     if sample == 'Melanoma':
-        df_bayesSpace.set_index('Unnamed: 0', inplace=True)
+        # df_bayesSpace.set_index('Unnamed: 0', inplace=True)
         df_manual_partial = pd.read_csv('./Data/others/Melanoma/manual_annotations_wo_unannotated_reg.csv', index_col=0)
         ari_partial = calc_ari(df_manual_partial, df_labels.loc[df_manual_partial.index])
         ari_partial_bayesSpace = calc_ari(df_manual_partial, df_bayesSpace['spatial.cluster'].loc[df_manual_partial.index])
