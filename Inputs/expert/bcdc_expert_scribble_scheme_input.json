@@ -1,7 +1,7 @@
 {
     "test_folder_base_name": "Mclust_run_pre_post_heat_bcdc_pc_15",
     "dataset": "others",
-    "n_pcs": 30,
+    "n_pcs": 15,
     "scribble": 1,
     "expert_scribble": 1,
     "nChannel": 100,

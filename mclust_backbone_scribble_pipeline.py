@@ -488,9 +488,16 @@ for model in tqdm(models):
     
             loss_lr = 0
             for i in range(mask_inds.shape[0]):
-                # loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
-                if np.random.rand() <= 0.5:
-                    loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
+                loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
+
+                percent_scribble_to_take = 0.05
+                n_spots_in_scribble = inds_scr_array[i].shape[0]
+                n_spots_to_take = int(n_spots_in_scribble * percent_scribble_to_take)
+                inds_to_take = np.random.choice(n_spots_in_scribble, n_spots_to_take, replace=False)
+                loss_lr += loss_fn_scr(output[ inds_scr_array[i][inds_to_take] ], target_scr[ inds_scr_array[i][inds_to_take] ])
+
+                # if np.random.rand() <= 0.5:
+                #     loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
 
             # loss_sim = loss_fn(output[ inds_sim ], target[ inds_sim ])
             loss_sim = loss_fn(output, target)

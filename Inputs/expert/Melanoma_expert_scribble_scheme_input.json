@@ -17,7 +17,7 @@
     "sim_options": [6],
     "miu_options": [0],
     "niu_options": [1],
-    "alpha_options": [0.95],
+    "alpha_options": [0.25],
     "lr_options": [0.1],
     "samples": ["Melanoma"]
 }
