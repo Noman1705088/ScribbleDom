@@ -153,6 +153,7 @@ for model in tqdm(models):
 
     # scribble_img = f'./Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/manual_scribble_mclust_10_percent.npy'
     scribble_img = f'./Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/mclust_backbone_scribble.npy'
+    # scribble_img = f'./Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data/{dataset}/{sample}/Scribble/mclust_scribble.npy'
     local_data_folder_path = './Algorithms/Unsupervised_Segmentation/Approaches/With_Scribbles/Local_Data'
 
     input = f'{npy_path}/mapped_{n_pcs}.npy'
@@ -346,6 +347,7 @@ for model in tqdm(models):
             if use_cuda:
                 inds_sim = inds_sim.cuda()
                 inds_scr = inds_scr.cuda()
+                inds_scr_array = [inds_scr_array[i].cuda() for i in range(mask_inds.shape[0])]
                 target_scr = target_scr.cuda()
 
 
@@ -494,38 +496,35 @@ for model in tqdm(models):
 
     
             loss_lr = 0
-            for i in range(mask_inds.shape[0]):
-                loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
 
+            inds_sim_plus_dropped_scribble = torch.clone(inds_sim)
+
+            if use_cuda:
+                inds_sim_plus_dropped_scribble = inds_sim_plus_dropped_scribble.cuda()
+            for i in range(mask_inds.shape[0]):
                 percent_scribble_to_take = beta
                 n_spots_in_scribble = inds_scr_array[i].shape[0]
                 n_spots_to_take = int(n_spots_in_scribble * percent_scribble_to_take)
                 inds_to_take = np.random.choice(n_spots_in_scribble, n_spots_to_take, replace=False)
-                loss_lr += loss_fn_scr(output[ inds_scr_array[i][inds_to_take] ], target_scr[ inds_scr_array[i][inds_to_take] ])
 
-                # if np.random.rand() <= 0.5:
-                #     loss_lr += loss_fn_scr(output[ inds_scr_array[i] ], target_scr[ inds_scr_array[i] ])
+                if inds_to_take.shape[0] != 0:
+                    loss_lr += loss_fn_scr(output[ inds_scr_array[i][inds_to_take] ], target_scr[ inds_scr_array[i][inds_to_take] ])
 
-            # loss_sim = loss_fn(output[ inds_sim ], target[ inds_sim ])
-            loss_sim = loss_fn(output, target)
+                inds_not_to_take = np.setdiff1d(np.arange(n_spots_in_scribble), inds_to_take)
+                inds_sim_plus_dropped_scribble = torch.cat((inds_sim, inds_scr_array[i][inds_not_to_take]), 0)
+            
+            loss_sim = loss_fn(output[ inds_sim_plus_dropped_scribble ], target[ inds_sim_plus_dropped_scribble ])
+            
             hyper_sum = stepsize_sim + stepsize_scr + stepsize_con
-
             sim_multiplier = 1
             con_multiplier = 1
             scr_multiplier = 1
             L_sim = stepsize_sim * loss_sim * sim_multiplier
             L_scr = stepsize_scr * loss_lr * scr_multiplier
-
             L_con = stepsize_con * (lhpy + lhpz + lhp_diag) * con_multiplier
             loss_without_hyperparam = loss_sim + loss_lr + (lhpy + lhpz + lhp_diag)
 
-            if hyper_sum_division:
-                loss = (L_sim + L_con + L_scr) / hyper_sum
-            else:
-                loss = (L_sim + L_con + L_scr)
-
             loss = alpha * loss_sim + (1 - alpha) * loss_lr
-
         else:
             loss_without_hyperparam = loss_fn(output, target) + (lhpy + lhpz + lhp_diag)
             loss = (stepsize_sim * loss_fn(output, target) + stepsize_con * (lhpy + lhpz + lhp_diag)) # consider hyperparameter sum division later
