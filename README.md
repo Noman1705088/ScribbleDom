@@ -18,10 +18,6 @@ First set and activate your environment by using the following command:
 conda env create -f environment.yml
 conda activate scribble_seg
 ```
-or, install the required packages by using the following command:
-```
-pip install -r requirements.txt
-```
 
 # Input
 To run ScribbleSeg, you need 3 input files for a sample:
@@ -45,22 +41,22 @@ Place the csv containing the principal compoents in ```./Data/[dataset_name]/[sa
 Make sure to change the name of the ```scr_csv_path``` variable according to the name of your CSV file in ```preprocessor.py```.
 
 ## Other input parameters
-Set the input parameters (e.g. hyperparameters, output directory name, and so on...) in ```./Inputs/[file_name].json``` by following the example json files shown inside ```./Inputs```.
+Set the input parameters (e.g. hyperparameters, output directory name, and so on...) in ```./Inputs/[expert/mclust]/[file_name].json``` by following the example json files shown inside ```./Inputs```.
 
 # How to generate scribbles?
 Scribbles can be generated using [Loupe browser](https://support.10xgenomics.com/single-cell-gene-expression/software/visualization/latest/what-is-loupe-cell-browser)
 
 # How to run?
-After setting up the input parameters on ```./Inputs/[file_name].json```, the following steps are required to run ScribbleSeg:
+After setting up the input parameters on ```./Inputs/[expert/mclust]/[file_name].json```, the following steps are required to run ScribbleSeg:
 1. At first you have to run preprocessor.py. For expert scribble scheme, run the following:
 ```
 python preprocessor.py --scheme expert --params "Preprocessor_input/bcdc_preprocessor_scheme.json"
 ```
 Or, for mclust scribble scheme, run the following:
 ```
-python preprocessor.py --scheme mclust --params Preprocessor_input/bcdc_preprocessor_scheme.json
+python preprocessor.py --scheme mclust_backbone --params Preprocessor_input/bcdc_preprocessor_scheme.json
 ```
-2. Then, to generate the segmentations for expert scribble scheme, run:
+2. Then, to generate the spatial domain for expert scribble scheme, run:
 ```
 python expert_scribble_pipeline.py --params ./Inputs/expert/bcdc_expert_scribble_scheme_input.json
 ```

@@ -7,7 +7,7 @@
     "nChannel": 100,
     "max_iter": 300,
     "nConv": 1,
-    "refinement_steps": 3,
+    "refinement_steps": 0,
     "visualize": 0,
     "use_background_scribble": 0,
     "added_layers": 0,

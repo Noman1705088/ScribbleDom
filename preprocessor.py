@@ -314,13 +314,17 @@ for sample in samples:
 
     if is_simulation:
         middle_hight = int(grid_pc.shape[0]/2)
-        grid_pc = np.full_like(grid_pc,5)
-        grid_pc[middle_hight] = np.full_like(grid_pc[middle_hight],125)
+        grid_pc = np.full_like(grid_pc,0)
+        # grid_pc[middle_hight] = np.full_like(grid_pc[middle_hight],225)
+
+        grid_pc[middle_hight+20:middle_hight+22] = np.full_like(grid_pc[middle_hight+20:middle_hight+22],50000)
+        grid_pc[middle_hight-22:middle_hight-20] = np.full_like(grid_pc[middle_hight-22:middle_hight-20],50000)
 
         middle_hight = int(grid_scr.shape[0]/2)
+        print(grid_pc.shape,grid_scr.shape,grid_pc[middle_hight+20:middle_hight+22].shape)
         grid_scr = np.full_like(grid_scr,255)
-        grid_scr[middle_hight] = np.zeros_like(grid_scr[middle_hight])
-        grid_scr[middle_hight+18] = np.ones_like(grid_scr[middle_hight+18])
+        grid_scr[middle_hight+21] = np.zeros_like(grid_scr[middle_hight+21])
+        grid_scr[middle_hight-10] = np.ones_like(grid_scr[middle_hight-10])
 
     np.save(scr_file_path, grid_scr)
     np.save(mapped_pc_file_path, grid_pc)
