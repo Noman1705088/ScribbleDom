@@ -1,6 +1,6 @@
-# ScribbleSeg
-A method to segment Spatial Transcriptomics data using scribble annotated histology image, or using 
-output of other possibly non-spatial segmentation method (e.g. mclust).
+# ScribbleDom
+A method to find spatial domain from Spatial Transcriptomics data using scribble annotated histology image, or using 
+output of other possibly non-spatial spatial domain detection method (e.g. mclust).
 
 # Prerequisites
 Results are generated using Google Colab Standard GPU. To ensure reproducibility, the following is done:
@@ -20,7 +20,7 @@ conda activate scribble_seg
 ```
 
 # Input
-To run ScribbleSeg, you need 3 input files for a sample:
+To run ScribbleDom, you need 3 input files for a sample:
  - The .h5 file containing the Anndata object
     - It must contain the ```array_row```, and ```array_col``` representing the position of each spot in a grid
  - A CSV file containing the principal component values
@@ -47,7 +47,7 @@ Set the input parameters (e.g. hyperparameters, output directory name, and so on
 Scribbles can be generated using [Loupe browser](https://support.10xgenomics.com/single-cell-gene-expression/software/visualization/latest/what-is-loupe-cell-browser)
 
 # How to run?
-After setting up the input parameters on ```./Inputs/[expert/mclust]/[file_name].json```, the following steps are required to run ScribbleSeg:
+After setting up the input parameters on ```./Inputs/[expert/mclust]/[file_name].json```, the following steps are required to run ScribbleDom:
 1. 
 1.1. If you run visium data. Here, breast cancer/ Human DLPFC data
 At first you have to run preprocessor.py. For expert scribble scheme, run the following:
@@ -66,7 +66,7 @@ Run the notebook: Utils/melanoma_data_generation.ipynb
 ```
 python expert_scribble_pipeline.py --params ./Inputs/expert/bcdc_expert_scribble_scheme_input.json
 ```
-Or, to generate the segmentations for mclust scribble scheme, run:
+Or, to generate the spatial domain for mclust scribble scheme, run:
 ```
 python mclust_scribble_pipeline.py --params ./Inputs/mclust/bcdc_mclust_scribble_scheme_input.json
 ```
