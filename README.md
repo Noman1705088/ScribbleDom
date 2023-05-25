@@ -48,7 +48,9 @@ Scribbles can be generated using [Loupe browser](https://support.10xgenomics.com
 
 # How to run?
 After setting up the input parameters on ```./Inputs/[expert/mclust]/[file_name].json```, the following steps are required to run ScribbleSeg:
-1. At first you have to run preprocessor.py. For expert scribble scheme, run the following:
+1. 
+1.1. If you run visium data. Here, breast cancer/ Human DLPFC data
+At first you have to run preprocessor.py. For expert scribble scheme, run the following:
 ```
 python preprocessor.py --scheme expert --params "Preprocessor_input/bcdc_preprocessor_scheme.json"
 ```
@@ -56,6 +58,10 @@ Or, for mclust scribble scheme, run the following:
 ```
 python preprocessor.py --scheme mclust_backbone --params Preprocessor_input/bcdc_preprocessor_scheme.json
 ```
+otherwise, 
+1.2. If you run ST data. Here, melanoma
+Run the notebook: Utils/melanoma_data_generation.ipynb
+
 2. Then, to generate the spatial domain for expert scribble scheme, run:
 ```
 python expert_scribble_pipeline.py --params ./Inputs/expert/bcdc_expert_scribble_scheme_input.json
