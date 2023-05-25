@@ -1,5 +1,5 @@
 {
-    "test_folder_base_name": "Mclust_run_pre_post_heat_bcdc_pc_15",
+    "test_folder_base_name": "bcdc_expert_scribble",
     "dataset": "others",
     "n_pcs": 15,
     "scribble": 1,

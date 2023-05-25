@@ -1,5 +1,5 @@
 {
-    "test_folder_base_name": "Melanoma_run_with_one_added_layer_scribble-1",
+    "test_folder_base_name": "melanoma_expert_scribble",
     "dataset": "others",
     "n_pcs": 7,
     "scribble": 1,

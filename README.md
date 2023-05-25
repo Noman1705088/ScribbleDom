@@ -73,6 +73,8 @@ python mclust_scribble_pipeline.py --params ./Inputs/mclust/bcdc_mclust_scribble
 3. Results will be put in Outputs directory.
 4. To calculate adjusted rand index (ARI), you will need the ground truth labels. Put the ground truth labels at ```./Data/[dataset name]/[sample name]/manual_annotations.csv```.
 5. 
+To find parameter value that give optimal result by grid search: 
+Run, Likelihood/Likelihood.ipynb , with the inputs asked
 
 # Other Informations
 The folder ```Supplementary_figures``` has the high quality figures of the supplementary information of our research paper.
