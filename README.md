@@ -16,7 +16,7 @@ Recommended Python version: 3.10.6
 First set and activate your environment by using the following command:
 ```
 conda env create -f environment.yml
-conda activate scribble_seg
+conda activate scribble_dom
 ```
 
 # Input
