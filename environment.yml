@@ -1,4 +1,4 @@
-name: scribble_seg
+name: scribble_dom
 channels:
   - pytorch
   - nvidia
