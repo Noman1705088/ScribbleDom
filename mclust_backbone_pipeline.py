@@ -409,14 +409,15 @@ for model in tqdm(models):
     loss_comparison = 0
 
     # %%
-    borders = np.load(border)
-
-    right_border = borders['right_border']
-    left_border = borders['left_border']
-    up_border = borders['up_border']
-    down_border = borders['down_border']
-
     if sample != 'Melanoma':
+        borders = np.load(border)
+
+        right_border = borders['right_border']
+        left_border = borders['left_border']
+        up_border = borders['up_border']
+        down_border = borders['down_border']
+
+    # if sample != 'Melanoma':
         nw_border = borders['nw_border']
         se_border = borders['se_border']
 
