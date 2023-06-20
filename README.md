@@ -70,9 +70,12 @@ Or, to generate the spatial domain for mclust scribble scheme, run:
 ```
 python mclust_scribble_pipeline.py --params ./Inputs/mclust/[sample]_mclust_backbone_scheme_input.json
 ```
-Here, sample = bcdc or DLPFC or melanoma
+Here, sample = bcdc or DLPFC or melanoma.
+
 3. Results will be put in Outputs directory.
+
 4. To calculate adjusted rand index (ARI), you will need the ground truth labels. Put the ground truth labels at ```./Data/[dataset name]/[sample name]/manual_annotations.csv```.
+
 5. To find hyper parameter value (alpha, beta) that give optimal result by grid search: 
 Run, ```Likelihood/Likelihood.ipynb``` , with the inputs asked
 
