@@ -48,7 +48,8 @@ Scribbles can be generated using [Loupe browser](https://support.10xgenomics.com
 
 # How to run?
 After setting up the input parameters on ```./Inputs/[expert/mclust]/[file_name].json```, the following steps are required to run ScribbleDom:
-1. 
+
+1. preprocessing step:
 ### If you run visium data. Here, breast cancer/ Human DLPFC data for preprocessing data,  
 At first you have to run preprocessor.py. For expert scribble scheme, run the following:
 ```
