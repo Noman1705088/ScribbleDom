@@ -6,7 +6,7 @@
     "expert_scribble": 1,
     "nChannel": 100,
     "max_iter": 300,
-    "nConv": 2,
+    "nConv": 1,
     "refinement_steps": 0,
     "visualize": 0,
     "use_background_scribble": 0,
